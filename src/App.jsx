@@ -1434,14 +1434,6 @@ export default function App() {
         <main className="timeline-stage">
           <section className="timeline-card">
             <div className="timeline-card__header timeline-card__header--stacked">
-              <div>
-                <p className="eyebrow">Timeline view</p>
-                <h2>Full-width life canvas</h2>
-                <p className="section-note">
-                  Scroll horizontally across the years. Wheel gestures move sideways inside the
-                  timeline, and zoom changes glide between states.
-                </p>
-              </div>
               <div className="timeline-card__toolbar">
                 <label className="timeline-zoom">
                   <span>Zoom {data.zoom.toFixed(2)}x</span>
