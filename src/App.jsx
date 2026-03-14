@@ -13,13 +13,15 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 const BASE_PIXELS_PER_DAY = 0.32;
 const MIN_ZOOM = 0.65;
 const MAX_ZOOM = 2.4;
-const MEMORY_ZONE_HEIGHT = 210;
-const BAND_TOP = 228;
+const MEMORY_ZONE_HEIGHT = 322;
+const BAND_TOP = 332;
 const BAND_HEIGHT = 116;
-const LANE_START_TOP = 374;
-const LANE_HEIGHT = 70;
-const LANE_GAP = 20;
+const LANE_START_TOP = 456;
+const LANE_HEIGHT = 46;
+const LANE_GAP = 2;
 const TIMELINE_OFFSET = 172;
+const FROZEN_LANE_WIDTH = 132;
+const TIMELINE_BOTTOM_PADDING = 20;
 
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
@@ -239,6 +241,82 @@ function getProfileInitials(name) {
     .join('');
 }
 
+function hexToRgb(color) {
+  const normalized = color?.replace('#', '').trim();
+
+  if (!normalized || (normalized.length !== 3 && normalized.length !== 6)) {
+    return null;
+  }
+
+  const expanded =
+    normalized.length === 3
+      ? normalized
+          .split('')
+          .map((value) => `${value}${value}`)
+          .join('')
+      : normalized;
+
+  const integer = Number.parseInt(expanded, 16);
+
+  if (Number.isNaN(integer)) {
+    return null;
+  }
+
+  return {
+    red: (integer >> 16) & 255,
+    green: (integer >> 8) & 255,
+    blue: integer & 255,
+  };
+}
+
+function rgbToHex({ red, green, blue }) {
+  return `#${[red, green, blue]
+    .map((value) => clamp(Math.round(value), 0, 255).toString(16).padStart(2, '0'))
+    .join('')}`;
+}
+
+function mixChannel(channel, target, amount) {
+  return channel + (target - channel) * amount;
+}
+
+function getRelativeContrastColor(color) {
+  const rgb = hexToRgb(color);
+
+  if (!rgb) {
+    return '#ffffff';
+  }
+
+  const luminance = (0.2126 * rgb.red + 0.7152 * rgb.green + 0.0722 * rgb.blue) / 255;
+  const target = luminance < 0.47 ? 255 : 16;
+  const amount = luminance < 0.47 ? 0.72 : 0.58;
+
+  return rgbToHex({
+    red: mixChannel(rgb.red, target, amount),
+    green: mixChannel(rgb.green, target, amount),
+    blue: mixChannel(rgb.blue, target, amount),
+  });
+}
+
+function PaintbrushIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path
+        d="M14.2 4.3a2.7 2.7 0 0 1 3.8 0l1.7 1.7a2.7 2.7 0 0 1 0 3.8l-5.6 5.6-5.5-5.5 5.6-5.6Z"
+        fill="currentColor"
+        opacity="0.95"
+      />
+      <path
+        d="m7.9 10.5 5.6 5.6-2 2c-.6.6-1.3 1-2.1 1.2l-2.2.6a2 2 0 0 1-2.5-2.5l.6-2.2c.2-.8.6-1.5 1.2-2.1l1.4-1.4Z"
+        fill="currentColor"
+      />
+      <path
+        d="M6.4 17.8c.8.1 1.4.8 1.4 1.6 0 .8-.6 1.5-1.4 1.6h-.6c-1.1 0-2-.9-2-2 0-1 .8-1.9 1.9-2h.7Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+
 function normalizeData(candidate) {
   const initial = createInitialData();
   const categories =
@@ -255,7 +333,7 @@ function normalizeData(candidate) {
     ? sortByDate(
         candidate.memories.map((memory, index) => ({
           id: memory.id || `memory-${index + 1}`,
-          name: memory.name || 'Untitled memory',
+          name: memory.name || 'Untitled moment',
           date: memory.date || candidate.birthDate || '',
           categoryId: categoryIds.has(memory.categoryId)
             ? memory.categoryId
@@ -506,7 +584,7 @@ function MemoryEditorModal({
 
   return (
     <ModalShell
-      title={draft ? 'Edit memory' : 'Add memory'}
+      title={draft ? 'Edit moment' : 'Add moment'}
       subtitle="Keep a title, date, category, and optional photo together in one moment."
       onClose={onClose}
       layer={50}
@@ -562,7 +640,7 @@ function MemoryEditorModal({
               setForm((current) => ({ ...current, details: event.target.value }))
             }
             rows={4}
-            placeholder="Add a few lines so the memory has context when you revisit it later."
+            placeholder="Add a few lines so the moment has context when you revisit it later."
           />
         </label>
         <div className="field">
@@ -574,7 +652,7 @@ function MemoryEditorModal({
           </label>
           {form.photoDataUrl ? (
             <div className="image-preview">
-              <img src={form.photoDataUrl} alt={form.name || 'Selected memory'} />
+              <img src={form.photoDataUrl} alt={form.name || 'Selected moment'} />
               <button
                 type="button"
                 className="text-button"
@@ -596,7 +674,7 @@ function MemoryEditorModal({
             Cancel
           </button>
           <button type="submit" className="primary-button">
-            Save memory
+            Save moment
           </button>
         </div>
       </form>
@@ -619,7 +697,7 @@ function RangeEditorModal({ draft, birthDate, onClose, onSave }) {
   return (
     <ModalShell
       title={draft ? `Edit ${TIMELINE_LANES.find((lane) => lane.id === draft.laneId)?.label}` : 'Add range'}
-      subtitle="These lower tracks tell the longer story behind your memories."
+      subtitle="These lower tracks tell the longer story behind your moments."
       onClose={onClose}
       layer={50}
     >
@@ -763,7 +841,7 @@ function CategoryManagerModal({ categories, onClose, onSave }) {
   return (
     <ModalShell
       title="Manage categories"
-      subtitle="Create your own memory palette and tune every category color."
+      subtitle="Create your own moment palette and tune every category color."
       onClose={onClose}
       layer={60}
     >
@@ -771,12 +849,21 @@ function CategoryManagerModal({ categories, onClose, onSave }) {
         <div className="category-editor">
           {draftCategories.map((category) => (
             <div className="category-editor__row" key={category.id}>
-              <input
-                type="color"
-                value={category.color}
-                onChange={(event) => updateCategory(category.id, 'color', event.target.value)}
-                aria-label={`Choose color for ${category.name}`}
-              />
+              <div
+                className="category-editor__color"
+                style={{
+                  '--category-color': category.color,
+                  '--category-brush-color': getRelativeContrastColor(category.color),
+                }}
+              >
+                <input
+                  type="color"
+                  value={category.color}
+                  onChange={(event) => updateCategory(category.id, 'color', event.target.value)}
+                  aria-label={`Choose color for ${category.name}`}
+                />
+                <PaintbrushIcon />
+              </div>
               <input
                 value={category.name}
                 onChange={(event) => updateCategory(category.id, 'name', event.target.value)}
@@ -942,9 +1029,9 @@ function DetailPanel({ detail, onEdit, onDelete }) {
       <section className="detail-panel">
         <div className="detail-panel__copy">
           <p className="eyebrow">Selected item</p>
-          <h3>Pick a memory or chapter</h3>
+          <h3>Pick a moment or chapter</h3>
           <p>
-            Click any marker or range on the timeline to reveal its details here. Memories live
+            Click any marker or range on the timeline to reveal its details here. Moments live
             along the top ribbon and long-form life chapters sit in the four lower tracks.
           </p>
         </div>
@@ -956,7 +1043,7 @@ function DetailPanel({ detail, onEdit, onDelete }) {
     return (
       <section className="detail-panel">
         <div className="detail-panel__copy">
-          <p className="eyebrow">Memory</p>
+          <p className="eyebrow">Moment</p>
           <h3>{detail.item.name}</h3>
           <div className="detail-panel__meta">
             <span>{formatDate(detail.item.date)}</span>
@@ -972,7 +1059,7 @@ function DetailPanel({ detail, onEdit, onDelete }) {
           <p>{detail.item.details || 'No extra notes yet.'}</p>
           <div className="detail-panel__actions">
             <button className="secondary-button" onClick={onEdit}>
-              Edit memory
+              Edit moment
             </button>
             <button className="ghost-button" onClick={onDelete}>
               Delete
@@ -1047,7 +1134,7 @@ function OnboardingScreen({ onSubmit }) {
         <p className="eyebrow">Chronicl</p>
         <h1>Turn your life into a living timeline.</h1>
         <p>
-          Start with your birth date. From there we can place memories above the axis, track life
+          Start with your birth date. From there we can place moments above the axis, track life
           chapters below it, and keep everything saved locally on this device.
         </p>
         <form className="startup-screen__form" onSubmit={handleSubmit}>
@@ -1147,6 +1234,9 @@ export default function App() {
     (total, lane) => total + data.ranges[lane.id].length,
     0,
   );
+  const laneStackHeight =
+    TIMELINE_LANES.length * LANE_HEIGHT + (TIMELINE_LANES.length - 1) * LANE_GAP;
+  const timelineCanvasHeight = LANE_START_TOP + laneStackHeight + TIMELINE_BOTTOM_PADDING;
 
   useEffect(() => {
     if (!birthDate) {
@@ -1258,14 +1348,14 @@ export default function App() {
         : [
             {
               id: 'memory',
-              name: 'Memory',
+              name: 'Moment',
               color: '#c889e7',
             },
           ];
     const fallbackCategory = cleanCategories.find(
-      (category) => category.name.toLowerCase() === 'memory',
+      (category) => category.name.toLowerCase() === 'moment',
     )
-      ? cleanCategories.find((category) => category.name.toLowerCase() === 'memory')
+      ? cleanCategories.find((category) => category.name.toLowerCase() === 'moment')
       : cleanCategories[0];
     const allowedIds = new Set(cleanCategories.map((category) => category.id));
 
@@ -1406,7 +1496,7 @@ export default function App() {
           </article>
           <div className="stat-card">
             <strong>{memories.length}</strong>
-            <span>Memories</span>
+            <span>Moments</span>
           </div>
           <div className="stat-card stat-card--profile">
             <button className="stat-card__edit" onClick={() => setProfileEditorOpen(true)}>
@@ -1454,14 +1544,44 @@ export default function App() {
                   />
                 </label>
                 <button className="primary-button" onClick={openNewMemory}>
-                  Add memory
+                  Add moment
                 </button>
               </div>
             </div>
 
-            <div className="timeline-frame timeline-frame--wide">
+            <div
+              className="timeline-frame timeline-frame--wide"
+              style={{ minHeight: `${timelineCanvasHeight}px` }}
+            >
               <div className="timeline-frame__background" style={background.style} />
               <div className="timeline-frame__wash" />
+              <div
+                className="lane-freeze-column"
+                style={{
+                  top: `${LANE_START_TOP}px`,
+                  width: `${FROZEN_LANE_WIDTH}px`,
+                  height: `${laneStackHeight}px`,
+                }}
+              >
+                {TIMELINE_LANES.map((lane, laneIndex) => {
+                  const top = laneIndex * (LANE_HEIGHT + LANE_GAP);
+
+                  return (
+                    <button
+                      key={lane.id}
+                      className="timeline-lane__label timeline-lane__label--frozen"
+                      style={{
+                        top: `${top + 4}px`,
+                        height: `${LANE_HEIGHT - 8}px`,
+                        '--lane-color': lane.color,
+                      }}
+                      onClick={() => openRangeForLane(lane.id)}
+                    >
+                      <strong>{lane.label}</strong>
+                    </button>
+                  );
+                })}
+              </div>
               <div
                 className="timeline-scroll"
                 ref={scrollRef}
@@ -1472,7 +1592,13 @@ export default function App() {
                   }
                 }}
               >
-                <div className="timeline-canvas" style={{ width: `${timelineWidth}px` }}>
+                <div
+                  className="timeline-canvas"
+                  style={{
+                    width: `${timelineWidth}px`,
+                    minHeight: `${timelineCanvasHeight}px`,
+                  }}
+                >
                   {yearSegments.map((segment, index) => (
                     <div
                       key={segment.key}
@@ -1496,10 +1622,6 @@ export default function App() {
                   </div>
 
                   <div className="memory-zone" style={{ height: `${MEMORY_ZONE_HEIGHT}px` }}>
-                    <div className="zone-label zone-label--memory">
-                      <strong>Memories</strong>
-                      <span>Click a marker to reveal the story</span>
-                    </div>
                     {memories.map((memory, index) => {
                       const category =
                         data.categories.find((entry) => entry.id === memory.categoryId) ??
@@ -1519,7 +1641,7 @@ export default function App() {
                             left: `${left}px`,
                             top: `${top}px`,
                             '--marker-color': category.color,
-                            '--marker-depth': `${MEMORY_ZONE_HEIGHT - top - 28}px`,
+                            '--marker-depth': `${BAND_TOP - top - 30}px`,
                           }}
                           onClick={() =>
                             setSelectedItem({
@@ -1530,12 +1652,9 @@ export default function App() {
                         >
                           <span className="memory-marker__stem" />
                           <span className="memory-marker__pin" />
-                          <span className="memory-marker__card">
-                            {memory.photoDataUrl ? (
-                              <img src={memory.photoDataUrl} alt={memory.name} />
-                            ) : null}
+                          <span className="memory-marker__label">
                             <strong>{memory.name}</strong>
-                            <small>{formatShortDate(memory.date)}</small>
+                            <small>{formatDate(memory.date)}</small>
                           </span>
                         </button>
                       );
@@ -1543,10 +1662,6 @@ export default function App() {
                   </div>
 
                   <div className="center-band" style={{ top: `${BAND_TOP}px`, height: `${BAND_HEIGHT}px` }}>
-                    <div className="center-band__labels">
-                      <span>Calendar year</span>
-                      <span>Age</span>
-                    </div>
                     <div className="center-band__row center-band__row--year">
                       {yearSegments.map((segment, index) => (
                         <div
@@ -1585,17 +1700,13 @@ export default function App() {
                         <div
                           className="timeline-lane"
                           key={lane.id}
-                          style={{ top: `${top}px`, height: `${LANE_HEIGHT}px` }}
+                          style={{
+                            top: `${top}px`,
+                            height: `${LANE_HEIGHT}px`,
+                            '--lane-color': lane.color,
+                          }}
                         >
                           <div className="timeline-lane__track" />
-                          <button
-                            className="timeline-lane__label"
-                            style={{ '--lane-color': lane.color }}
-                            onClick={() => openRangeForLane(lane.id)}
-                          >
-                            <strong>{lane.label}</strong>
-                            <small>Add chapter</small>
-                          </button>
                           {data.ranges[lane.id].map((range) => (
                             <button
                               key={range.id}
@@ -1620,10 +1731,6 @@ export default function App() {
                               }
                             >
                               <strong>{range.label}</strong>
-                              <small>
-                                {formatMonthYear(range.startDate)} to{' '}
-                                {formatMonthYear(range.endDate)}
-                              </small>
                             </button>
                           ))}
                         </div>

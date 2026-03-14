@@ -30,7 +30,7 @@ export const DEFAULT_CATEGORIES = [
   { id: 'death', name: 'Death', color: '#6c5d56' },
   { id: 'travel', name: 'Travel', color: '#76d4ae' },
   { id: 'event', name: 'Event', color: '#f3b75f' },
-  { id: 'memory', name: 'Memory', color: '#c889e7' },
+  { id: 'memory', name: 'Moment', color: '#c889e7' },
 ];
 
 const svgToDataUri = (markup) => `url("data:image/svg+xml,${encodeURIComponent(markup)}")`;
