@@ -40,8 +40,8 @@ button {
 .app-root {
   min-height: 100vh;
   background:
-    linear-gradient(rgba(244, 247, 250, 0.36), rgba(244, 247, 250, 0.42)),
-    url('./assets/wallpapers/wallpaper1.jpeg') center / cover no-repeat fixed,
+    linear-gradient(rgba(244, 247, 250, 0.14), rgba(244, 247, 250, 0.18)),
+    var(--wallpaper-image) center / cover no-repeat fixed,
     radial-gradient(circle at 6% 0%, rgba(255, 255, 255, 0.42), transparent 28%),
     radial-gradient(circle at 92% 8%, rgba(255, 255, 255, 0.14), transparent 24%),
     radial-gradient(circle at 50% 110%, rgba(255, 255, 255, 0.08), transparent 30%),
@@ -793,20 +793,19 @@ button {
   border: 1px solid var(--border);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 28%),
-    linear-gradient(180deg, var(--surface-strong), var(--surface-soft));
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--surface-strong) 82%, transparent),
+      color-mix(in srgb, var(--surface-soft) 74%, transparent)
+    );
   isolation: isolate;
+  backdrop-filter: blur(10px);
 }
 
-.timeline-frame__background,
 .timeline-frame__wash {
   position: absolute;
   inset: 0;
   pointer-events: none;
-}
-
-.timeline-frame__background {
-  opacity: 0.74;
-  filter: saturate(0.96);
 }
 
 .timeline-frame__wash {
@@ -962,6 +961,8 @@ button {
   overflow: visible;
   z-index: 2;
   transition: opacity 300ms ease, filter 300ms ease;
+  animation: memory-marker-enter 560ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: var(--marker-delay, 0ms);
 }
 
 .memory-marker:hover,
@@ -992,6 +993,9 @@ button {
     color-mix(in srgb, var(--marker-color) 28%, transparent) 100%
   );
   transform: translateX(-50%);
+  transform-origin: top center;
+  animation: memory-stem-enter 500ms ease both;
+  animation-delay: calc(var(--marker-delay, 0ms) + 40ms);
 }
 
 .memory-marker__stem::after {
@@ -1024,6 +1028,8 @@ button {
     inset 0 1px 0 rgba(255, 255, 255, 0.38);
   transition: transform 300ms ease, box-shadow 300ms ease, filter 300ms ease;
   overflow: hidden;
+  animation: memory-pin-enter 620ms cubic-bezier(0.2, 1.2, 0.3, 1) both;
+  animation-delay: calc(var(--marker-delay, 0ms) + 80ms);
 }
 
 .memory-marker__pin::before {
@@ -1074,6 +1080,8 @@ button {
   transition: transform 300ms ease, opacity 300ms ease, filter 300ms ease;
   position: relative;
   z-index: 3;
+  animation: memory-label-enter 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(var(--marker-delay, 0ms) + 120ms);
 }
 
 .memory-marker:hover .memory-marker__pin {
@@ -1113,6 +1121,67 @@ button {
   font-size: 0.72rem;
   font-weight: 600;
   color: color-mix(in srgb, var(--text) 68%, white);
+}
+
+@keyframes memory-marker-enter {
+  from {
+    opacity: 0;
+    filter: saturate(0.9);
+  }
+
+  to {
+    opacity: 1;
+    filter: none;
+  }
+}
+
+@keyframes memory-stem-enter {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) scaleY(0.18);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(-50%) scaleY(1);
+  }
+}
+
+@keyframes memory-pin-enter {
+  0% {
+    opacity: 0;
+    box-shadow:
+      0 0 0 rgba(0, 0, 0, 0),
+      inset 0 1px 0 rgba(255, 255, 255, 0);
+  }
+
+  100% {
+    opacity: 1;
+    box-shadow:
+      0 8px 16px rgba(0, 0, 0, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.38);
+  }
+}
+
+@keyframes memory-label-enter {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .memory-marker,
+  .memory-marker__stem,
+  .memory-marker__pin,
+  .memory-marker__label,
+  .range-block,
+  .range-block strong {
+    animation: none;
+  }
 }
 
 .center-band {
@@ -1310,6 +1379,9 @@ button {
   transition:
     left 220ms ease,
     width 220ms ease;
+  transform-origin: left center;
+  animation: range-block-enter 520ms cubic-bezier(0.2, 0.9, 0.25, 1) both;
+  animation-delay: var(--range-delay, 0ms);
 }
 
 .range-block strong,
@@ -1324,10 +1396,36 @@ button {
   font-weight: 400;
   letter-spacing: 0.01em;
   line-height: 1.1;
+  animation: range-label-enter 220ms ease both;
+  animation-delay: calc(var(--range-delay, 0ms) + 220ms);
 }
 
 .range-block small {
   opacity: 0.88;
+}
+
+@keyframes range-block-enter {
+  from {
+    opacity: 0.3;
+    transform: scaleX(0.08);
+  }
+
+  to {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+}
+
+@keyframes range-label-enter {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 .detail-panel {

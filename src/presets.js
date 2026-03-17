@@ -1,3 +1,7 @@
+import wallpaper1 from './assets/wallpapers/wallpaper1.jpeg';
+import wallpaper4 from './assets/wallpapers/wallpaper4.jpeg';
+import wallpaper5 from './assets/wallpapers/wallpaper5.jpg';
+
 export const TIMELINE_LANES = [
   {
     id: 'home',
@@ -33,92 +37,44 @@ export const DEFAULT_CATEGORIES = [
   { id: 'memory', name: 'Moment', color: '#c889e7' },
 ];
 
-const svgToDataUri = (markup) => `url("data:image/svg+xml,${encodeURIComponent(markup)}")`;
-
-const atlasPattern = svgToDataUri(`
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 420">
-    <g fill="none" stroke="rgba(255,255,255,0.28)" stroke-width="1.25">
-      <path d="M22 88c46-52 111-70 181-52s129 8 195-41" />
-      <path d="M-12 148c47-52 115-67 189-48s131 13 205-34" />
-      <path d="M18 204c54-46 119-60 191-42s137 15 210-26" />
-      <path d="M-18 260c54-46 125-59 199-39s139 12 213-27" />
-      <path d="M12 316c54-44 127-53 201-30s145 15 219-24" />
-      <path d="M-24 372c56-41 130-50 205-27s148 18 223-16" />
-    </g>
-  </svg>
-`);
-
-const bloomPattern = svgToDataUri(`
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 520">
-    <g fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="1.2">
-      <circle cx="120" cy="120" r="54" />
-      <circle cx="120" cy="120" r="92" />
-      <circle cx="376" cy="170" r="70" />
-      <circle cx="376" cy="170" r="118" />
-      <circle cx="250" cy="370" r="84" />
-      <circle cx="250" cy="370" r="136" />
-    </g>
-  </svg>
-`);
-
-const starfieldPattern = svgToDataUri(`
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 360">
-    <g fill="rgba(255,255,255,0.18)">
-      <circle cx="42" cy="58" r="2" />
-      <circle cx="168" cy="90" r="2.2" />
-      <circle cx="292" cy="66" r="1.8" />
-      <circle cx="92" cy="188" r="1.8" />
-      <circle cx="250" cy="212" r="2" />
-      <circle cx="320" cy="276" r="2" />
-      <circle cx="142" cy="298" r="1.8" />
-    </g>
-    <g stroke="rgba(255,255,255,0.16)" stroke-width="1">
-      <path d="M44 50v16M36 58h16" />
-      <path d="M168 82v16M160 90h16" />
-      <path d="M292 58v16M284 66h16" />
-      <path d="M92 180v16M84 188h16" />
-      <path d="M250 204v16M242 212h16" />
-      <path d="M320 268v16M312 276h16" />
-      <path d="M142 290v16M134 298h16" />
-    </g>
-  </svg>
-`);
-
 export const BACKGROUND_PRESETS = [
   {
-    id: 'atlas',
-    name: 'Atlas Veil',
-    description: 'Warm contour lines floating across soft paper light.',
-    preview: 'linear-gradient(135deg, #ecdcc1, #b67643)',
+    id: 'forest',
+    name: 'Forest',
+    description: 'Deep woodland light and layered green distance.',
+    preview: 'linear-gradient(135deg, #2f5c45, #8db08d)',
+    wallpaper: `url(${wallpaper1})`,
     style: {
-      backgroundImage: `radial-gradient(circle at 15% 20%, rgba(255,255,255,0.48), transparent 28%), radial-gradient(circle at 85% 0%, rgba(217,156,82,0.34), transparent 32%), ${atlasPattern}`,
-      backgroundSize: 'auto, auto, 380px 380px',
-      backgroundPosition: 'center, center, center',
-      backgroundRepeat: 'no-repeat, no-repeat, repeat',
+      backgroundImage: `linear-gradient(rgba(255,255,255,0.1), rgba(255,255,255,0.14)), url(${wallpaper1})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundRepeat: 'no-repeat',
     },
   },
   {
-    id: 'bloom',
-    name: 'Paper Bloom',
-    description: 'Concentric rings and soft floral shadows for a gentler mood.',
-    preview: 'linear-gradient(135deg, #f0e9d6, #7fb3a8)',
+    id: 'wallpaper4',
+    name: 'Wallpaper 4',
+    description: 'Alternate wallpaper selection.',
+    preview: 'linear-gradient(135deg, #ab4841, #d8eefb)',
+    wallpaper: `url(${wallpaper4})`,
     style: {
-      backgroundImage: `radial-gradient(circle at 80% 18%, rgba(120,190,170,0.34), transparent 30%), radial-gradient(circle at 12% 88%, rgba(255,255,255,0.42), transparent 34%), ${bloomPattern}`,
-      backgroundSize: 'auto, auto, 420px 420px',
-      backgroundPosition: 'center, center, center',
-      backgroundRepeat: 'no-repeat, no-repeat, repeat',
+      backgroundImage: `linear-gradient(rgba(255,255,255,0.1), rgba(255,255,255,0.14)), url(${wallpaper4})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundRepeat: 'no-repeat',
     },
   },
   {
-    id: 'starglass',
-    name: 'Starglass',
-    description: 'A clean nocturne with faint constellations and brass haze.',
-    preview: 'linear-gradient(135deg, #18273a, #bd8a5a)',
+    id: 'wallpaper5',
+    name: 'Wallpaper 5',
+    description: 'Alternate wallpaper selection.',
+    preview: 'linear-gradient(135deg, #d66fa3, #f5c2dd)',
+    wallpaper: `url(${wallpaper5})`,
     style: {
-      backgroundImage: `radial-gradient(circle at 18% 22%, rgba(224,173,115,0.24), transparent 24%), radial-gradient(circle at 78% 6%, rgba(255,255,255,0.12), transparent 26%), ${starfieldPattern}`,
-      backgroundSize: 'auto, auto, 340px 340px',
-      backgroundPosition: 'center, center, center',
-      backgroundRepeat: 'no-repeat, no-repeat, repeat',
+      backgroundImage: `linear-gradient(rgba(255,255,255,0.1), rgba(255,255,255,0.14)), url(${wallpaper5})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundRepeat: 'no-repeat',
     },
   },
 ];
@@ -184,29 +140,29 @@ export const THEMES = [
   },
   {
     id: 'studiogold',
-    name: 'Studio Gold',
-    description: 'A cinematic dark slate grounded by warm metallic highlights.',
-    preview: 'linear-gradient(135deg, #202733, #bb8b59)',
+    name: 'Canopy',
+    description: 'A fresh green editorial palette with warm natural light.',
+    preview: 'linear-gradient(135deg, #e8f1df, #6f9b62)',
     vars: {
-      '--app-bg': 'linear-gradient(180deg, #1d2430 0%, #283241 50%, #2d3d4f 100%)',
-      '--app-bg-secondary': 'rgba(18, 26, 36, 0.76)',
-      '--surface': 'rgba(26, 34, 45, 0.72)',
-      '--surface-strong': 'rgba(32, 42, 55, 0.92)',
-      '--surface-soft': 'rgba(28, 37, 49, 0.58)',
-      '--border': 'rgba(223, 191, 156, 0.14)',
-      '--text': '#f6f0e6',
-      '--muted': '#bfbaa8',
-      '--accent': '#cb8a4b',
-      '--accent-strong': '#e5aa6c',
-      '--accent-soft': 'rgba(203, 138, 75, 0.16)',
-      '--shadow': '0 35px 90px rgba(0, 0, 0, 0.32)',
-      '--band-top': 'rgba(29, 37, 48, 0.9)',
-      '--band-bottom': 'rgba(26, 33, 44, 0.96)',
-      '--grid-line': 'rgba(255, 244, 229, 0.08)',
-      '--grid-strong': 'rgba(255, 244, 229, 0.16)',
-      '--memory-surface': 'rgba(35, 44, 57, 0.94)',
-      '--range-surface': 'rgba(37, 46, 59, 0.88)',
-      '--detail-surface': 'rgba(27, 35, 46, 0.92)',
+      '--app-bg': 'linear-gradient(180deg, #eef5e6 0%, #dfead5 46%, #cfdfc2 100%)',
+      '--app-bg-secondary': 'rgba(239, 247, 232, 0.72)',
+      '--surface': 'rgba(252, 255, 248, 0.78)',
+      '--surface-strong': 'rgba(255, 255, 251, 0.92)',
+      '--surface-soft': 'rgba(245, 251, 240, 0.62)',
+      '--border': 'rgba(86, 116, 73, 0.16)',
+      '--text': '#1f2a1b',
+      '--muted': '#64725d',
+      '--accent': '#6b9a57',
+      '--accent-strong': '#4f7940',
+      '--accent-soft': 'rgba(107, 154, 87, 0.14)',
+      '--shadow': '0 30px 80px rgba(64, 93, 53, 0.16)',
+      '--band-top': 'rgba(255, 255, 255, 0.8)',
+      '--band-bottom': 'rgba(238, 245, 230, 0.98)',
+      '--grid-line': 'rgba(92, 122, 82, 0.13)',
+      '--grid-strong': 'rgba(92, 122, 82, 0.22)',
+      '--memory-surface': 'rgba(255, 255, 255, 0.9)',
+      '--range-surface': 'rgba(250, 253, 246, 0.88)',
+      '--detail-surface': 'rgba(250, 254, 246, 0.92)',
       '--display-font': '"Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif',
       '--body-font': '"Avenir Next", "Segoe UI", sans-serif',
     },

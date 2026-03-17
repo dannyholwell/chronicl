@@ -1535,6 +1535,10 @@ export default function App() {
   const theme = THEMES.find((entry) => entry.id === data.themeId) ?? THEMES[0];
   const background =
     BACKGROUND_PRESETS.find((entry) => entry.id === data.backgroundId) ?? BACKGROUND_PRESETS[0];
+  const appRootStyle = {
+    ...theme.vars,
+    '--wallpaper-image': background.wallpaper,
+  };
 
   useEffect(() => {
     try {
@@ -1588,6 +1592,13 @@ export default function App() {
     getFallbackCategory(data.categories);
   const ageNow = birthDate ? getCurrentAge(birthDate) : 0;
   const selectedDetail = getSelectedDetail(selectedItem, data, data.categories);
+  const rangeAnimationOrder = Object.fromEntries(
+    TIMELINE_LANES.flatMap((lane) => data.ranges[lane.id])
+      .sort((left, right) => {
+        return toDate(left.startDate).getTime() - toDate(right.startDate).getTime();
+      })
+      .map((range, index) => [range.id, index]),
+  );
   const rangeCount = TIMELINE_LANES.reduce(
     (total, lane) => total + data.ranges[lane.id].length,
     0,
@@ -1619,7 +1630,7 @@ export default function App() {
 
   if (!data.birthDate) {
     return (
-      <div className="app-root" style={theme.vars}>
+      <div className="app-root" style={appRootStyle}>
         <OnboardingScreen
           onSubmit={({ profileName, birthDate }) =>
             setData((current) => {
@@ -1821,7 +1832,7 @@ export default function App() {
   }
 
   return (
-    <div className="app-root" style={theme.vars}>
+    <div className="app-root" style={appRootStyle}>
       <div className="app-shell">
         <header className="app-header">
           <div className="app-header__hero">
@@ -1935,7 +1946,6 @@ export default function App() {
               className="timeline-frame timeline-frame--wide"
               style={{ minHeight: `${timelineCanvasHeight}px` }}
             >
-              <div className="timeline-frame__background" style={background.style} />
               <div className="timeline-frame__wash" />
               <div
                 className="lane-freeze-column"
@@ -2024,6 +2034,7 @@ export default function App() {
                             top: `${top}px`,
                             '--marker-color': category.color,
                             '--marker-depth': `${BAND_TOP - top - 30}px`,
+                            '--marker-delay': `${index * 90}ms`,
                           }}
                           onClick={() =>
                             setSelectedItem({
@@ -2123,6 +2134,7 @@ export default function App() {
                                 left: `${TIMELINE_OFFSET + positionForDate(range.startDate)}px`,
                                 width: `${widthForRange(range.startDate, range.endDate)}px`,
                                 background: `color-mix(in srgb, ${range.color} 22%, white)`,
+                                '--range-delay': `${(rangeAnimationOrder[range.id] ?? 0) * 90}ms`,
                               }}
                               onClick={() =>
                                 setSelectedItem({
