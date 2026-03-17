@@ -1061,9 +1061,11 @@ function DetailPanel({ detail, onEdit, onDelete }) {
             <button className="secondary-button" onClick={onEdit}>
               Edit moment
             </button>
-            <button className="ghost-button" onClick={onDelete}>
-              Delete
-            </button>
+            {detail.item.autoCreated ? null : (
+              <button className="ghost-button" onClick={onDelete}>
+                Delete
+              </button>
+            )}
           </div>
         </div>
         {detail.item.photoDataUrl ? (
@@ -1208,7 +1210,7 @@ export default function App() {
   const birthDate = data.birthDate ? toDate(data.birthDate) : null;
   const latestDate = birthDate ? getLatestDate(data, birthDate) : null;
   const startDate = birthDate ? startOfYear(birthDate) : null;
-  const endDate = birthDate && latestDate ? endOfYear(addYears(latestDate, 1)) : null;
+  const endDate = birthDate && latestDate ? endOfYear(latestDate) : null;
   const pixelsPerDay = BASE_PIXELS_PER_DAY * data.zoom;
   const todayMarkerDate = new Date(
     new Date().getFullYear(),
@@ -1228,6 +1230,9 @@ export default function App() {
   const ageSegments =
     birthDate && endDate ? buildAgeSegments(birthDate, endDate, pixelsPerDay) : [];
   const memories = sortByDate(data.memories);
+  const birthCategory =
+    data.categories.find((category) => category.name.toLowerCase() === 'birth') ??
+    getFallbackCategory(data.categories);
   const ageNow = birthDate ? getCurrentAge(birthDate) : 0;
   const selectedDetail = getSelectedDetail(selectedItem, data, data.categories);
   const rangeCount = TIMELINE_LANES.reduce(
@@ -1376,6 +1381,10 @@ export default function App() {
 
   function handleDeleteSelected() {
     if (!selectedDetail) {
+      return;
+    }
+
+    if (selectedDetail.kind === 'memory' && selectedDetail.item.autoCreated) {
       return;
     }
 
@@ -1636,7 +1645,7 @@ export default function App() {
                             selectedItem?.kind === 'memory' && selectedItem.id === memory.id
                               ? 'is-selected'
                               : ''
-                          }`}
+                          } ${memory.photoDataUrl ? 'has-photo' : 'has-pattern'}`}
                           style={{
                             left: `${left}px`,
                             top: `${top}px`,
@@ -1651,7 +1660,18 @@ export default function App() {
                           }
                         >
                           <span className="memory-marker__stem" />
-                          <span className="memory-marker__pin" />
+                          <span className="memory-marker__pin">
+                            <span
+                              className="memory-marker__preview"
+                              style={
+                                memory.photoDataUrl
+                                  ? {
+                                      backgroundImage: `url(${memory.photoDataUrl})`,
+                                    }
+                                  : undefined
+                              }
+                            />
+                          </span>
                           <span className="memory-marker__label">
                             <strong>{memory.name}</strong>
                             <small>{formatDate(memory.date)}</small>
@@ -1677,6 +1697,15 @@ export default function App() {
                       ))}
                     </div>
                     <div className="center-band__row center-band__row--age">
+                      {birthDate ? (
+                        <div
+                          className="center-band__birth-line"
+                          style={{
+                            left: `${TIMELINE_OFFSET + positionForDate(data.birthDate)}px`,
+                            '--birth-line-color': birthCategory.color,
+                          }}
+                        />
+                      ) : null}
                       {ageSegments.map((segment, index) => (
                         <div
                           className={`band-segment ${index % 2 === 0 ? 'is-even' : ''}`}
