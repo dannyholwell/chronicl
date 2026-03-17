@@ -22,6 +22,20 @@ const LANE_GAP = 2;
 const TIMELINE_OFFSET = 172;
 const FROZEN_LANE_WIDTH = 132;
 const TIMELINE_BOTTOM_PADDING = 20;
+const MONTH_OPTIONS = [
+  { value: '01', label: 'January' },
+  { value: '02', label: 'February' },
+  { value: '03', label: 'March' },
+  { value: '04', label: 'April' },
+  { value: '05', label: 'May' },
+  { value: '06', label: 'June' },
+  { value: '07', label: 'July' },
+  { value: '08', label: 'August' },
+  { value: '09', label: 'September' },
+  { value: '10', label: 'October' },
+  { value: '11', label: 'November' },
+  { value: '12', label: 'December' },
+];
 
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
@@ -41,6 +55,93 @@ function toDate(value) {
   }
 
   return new Date(`${value}T12:00:00`);
+}
+
+function daysInMonth(year, month) {
+  return new Date(Number(year), Number(month), 0).getDate();
+}
+
+function parseDateParts(value, fallbackYear = new Date().getFullYear()) {
+  const date = toDate(value);
+
+  if (date) {
+    return {
+      year: String(date.getFullYear()),
+      month: String(date.getMonth() + 1).padStart(2, '0'),
+      day: String(date.getDate()).padStart(2, '0'),
+    };
+  }
+
+  return {
+    year: String(fallbackYear),
+    month: '01',
+    day: '01',
+  };
+}
+
+function buildIsoDate({ year, month, day }) {
+  return `${year}-${month}-${day}`;
+}
+
+function formatDateInputValue(value) {
+  const parts = parseDateParts(value);
+  return `${parts.day}/${parts.month}/${parts.year}`;
+}
+
+function parseTypedDateInput(value, minYear, maxYear) {
+  const normalized = value.trim();
+
+  if (!normalized) {
+    return null;
+  }
+
+  const segments = normalized.split(/[./-]/).map((segment) => segment.trim());
+
+  if (segments.length !== 3) {
+    return null;
+  }
+
+  let year;
+  let month;
+  let day;
+
+  if (segments[0].length === 4) {
+    [year, month, day] = segments;
+  } else {
+    [day, month, year] = segments;
+  }
+
+  if (!year || !month || !day) {
+    return null;
+  }
+
+  const safeYear = Number(year);
+  const safeMonth = Number(month);
+  const safeDay = Number(day);
+
+  if (
+    Number.isNaN(safeYear) ||
+    Number.isNaN(safeMonth) ||
+    Number.isNaN(safeDay) ||
+    safeYear < minYear ||
+    safeYear > maxYear ||
+    safeMonth < 1 ||
+    safeMonth > 12
+  ) {
+    return null;
+  }
+
+  const lastDay = daysInMonth(safeYear, safeMonth);
+
+  if (safeDay < 1 || safeDay > lastDay) {
+    return null;
+  }
+
+  return buildIsoDate({
+    year: String(safeYear),
+    month: String(safeMonth).padStart(2, '0'),
+    day: String(safeDay).padStart(2, '0'),
+  });
 }
 
 function formatDate(value) {
@@ -317,6 +418,19 @@ function PaintbrushIcon() {
   );
 }
 
+function CalendarIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path
+        d="M7 2.8a.8.8 0 0 1 .8.8v1h8.4v-1a.8.8 0 0 1 1.6 0v1h.8A2.4 2.4 0 0 1 21 7v12.2a2.4 2.4 0 0 1-2.4 2.4H5.4A2.4 2.4 0 0 1 3 19.2V7a2.4 2.4 0 0 1 2.4-2.4h.8v-1A.8.8 0 0 1 7 2.8Z"
+        fill="currentColor"
+      />
+      <path d="M4.6 9.2h14.8v10a.8.8 0 0 1-.8.8H5.4a.8.8 0 0 1-.8-.8v-10Z" fill="#fff" opacity="0.92" />
+      <path d="M7.3 12.1h2.2v2H7.3Zm3.6 0h2.2v2h-2.2Zm3.6 0h2.2v2h-2.2Zm-7.2 3.5h2.2v2H7.3Zm3.6 0h2.2v2h-2.2Z" fill="currentColor" opacity="0.72" />
+    </svg>
+  );
+}
+
 function normalizeData(candidate) {
   const initial = createInitialData();
   const categories =
@@ -357,7 +471,7 @@ function normalizeData(candidate) {
         startDate: range.startDate || candidate.birthDate || '',
         endDate: range.endDate || range.startDate || candidate.birthDate || '',
         details: range.details || '',
-        color: range.color || getLaneColor(lane.id),
+        color: getLaneColor(lane.id),
       }))
       .sort((left, right) => {
         return toDate(left.startDate).getTime() - toDate(right.startDate).getTime();
@@ -442,7 +556,6 @@ function createEmptyRange(laneId, birthDate, draft) {
     startDate: draft?.startDate || birthDate || '',
     endDate: draft?.endDate || birthDate || '',
     details: draft?.details || '',
-    color: draft?.color || getLaneColor(laneId),
   };
 }
 
@@ -527,6 +640,246 @@ function ModalShell({ title, subtitle, onClose, children, layer = 40 }) {
   );
 }
 
+function MomentDateField({ value, minYear, maxYear, onChange }) {
+  const fallbackYear = clamp(new Date().getFullYear(), minYear, maxYear);
+  const initialParts = parseDateParts(value, fallbackYear);
+  const [inputValue, setInputValue] = useState(value ? formatDateInputValue(value) : '');
+  const [isPickerOpen, setPickerOpen] = useState(false);
+  const [pickerStep, setPickerStep] = useState('year');
+  const [pickerParts, setPickerParts] = useState(initialParts);
+  const [inputError, setInputError] = useState('');
+
+  useEffect(() => {
+    setInputValue(value ? formatDateInputValue(value) : '');
+    setPickerParts(parseDateParts(value, fallbackYear));
+    setInputError('');
+  }, [value, fallbackYear]);
+
+  const selectedYear = clamp(Number(pickerParts.year), minYear, maxYear);
+  const selectedMonth = clamp(Number(pickerParts.month), 1, 12);
+  const selectedDay = clamp(Number(pickerParts.day), 1, daysInMonth(selectedYear, selectedMonth));
+  const yearOptions = [];
+
+  for (let year = maxYear; year >= minYear; year -= 1) {
+    yearOptions.push(year);
+  }
+
+  function commitDate(nextParts) {
+    const nextYear = clamp(Number(nextParts.year), minYear, maxYear);
+    const nextMonth = clamp(Number(nextParts.month), 1, 12);
+    const nextDay = clamp(Number(nextParts.day), 1, daysInMonth(nextYear, nextMonth));
+    const nextIso = buildIsoDate({
+      year: String(nextYear),
+      month: String(nextMonth).padStart(2, '0'),
+      day: String(nextDay).padStart(2, '0'),
+    });
+
+    setPickerParts({
+      year: String(nextYear),
+      month: String(nextMonth).padStart(2, '0'),
+      day: String(nextDay).padStart(2, '0'),
+    });
+    setInputValue(formatDateInputValue(nextIso));
+    setInputError('');
+    onChange(nextIso);
+  }
+
+  function handleTextCommit() {
+    const parsed = parseTypedDateInput(inputValue, minYear, maxYear);
+
+    if (!parsed) {
+      setInputError(`Use DD/MM/YYYY between ${minYear} and ${maxYear}.`);
+      onChange('');
+      return;
+    }
+
+    commitDate(parseDateParts(parsed, fallbackYear));
+  }
+
+  function openPicker() {
+    const seedValue = parseTypedDateInput(inputValue, minYear, maxYear) || value;
+    setPickerParts(parseDateParts(seedValue, fallbackYear));
+    setPickerStep('year');
+    setPickerOpen(true);
+  }
+
+  return (
+    <div className="field">
+      <div className="field__split">
+        <span>Date</span>
+        <small className="field__hint">{value ? formatDate(value) : 'Pick a full date'}</small>
+      </div>
+      <div className="date-entry">
+        <input
+          type="text"
+          value={inputValue}
+          onChange={(event) => {
+            setInputValue(event.target.value);
+            setInputError('');
+          }}
+          onBlur={handleTextCommit}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') {
+              event.preventDefault();
+              handleTextCommit();
+            }
+          }}
+          placeholder="DD/MM/YYYY"
+          aria-label="Moment date"
+        />
+        <button type="button" className="date-entry__button" onClick={openPicker} aria-label="Open calendar">
+          <CalendarIcon />
+        </button>
+      </div>
+      {inputError ? <p className="field__error">{inputError}</p> : null}
+      {isPickerOpen ? (
+        <div className="date-picker-shell" style={{ zIndex: 80 }}>
+          <button
+            type="button"
+            className="date-picker-shell__backdrop"
+            onClick={() => setPickerOpen(false)}
+            aria-label="Close date picker"
+          />
+          <div className="date-picker-sheet" role="dialog" aria-modal="true" aria-label="Choose a date">
+            <div className="date-picker-sheet__header">
+              <div>
+                <p className="eyebrow">Choose date</p>
+                <strong>
+                  {pickerStep === 'year'
+                    ? 'Select year'
+                    : pickerStep === 'month'
+                      ? 'Select month'
+                      : 'Select day'}
+                </strong>
+              </div>
+              <button type="button" className="icon-button" onClick={() => setPickerOpen(false)}>
+                Close
+              </button>
+            </div>
+            <div className="date-picker-sheet__summary">{formatDate(buildIsoDate({
+              year: String(selectedYear),
+              month: String(selectedMonth).padStart(2, '0'),
+              day: String(selectedDay).padStart(2, '0'),
+            }))}</div>
+            <div className="date-picker-sheet__progress">
+              <button
+                type="button"
+                className={`date-step ${pickerStep === 'year' ? 'is-active' : ''}`}
+                onClick={() => setPickerStep('year')}
+              >
+                Year
+              </button>
+              <button
+                type="button"
+                className={`date-step ${pickerStep === 'month' ? 'is-active' : ''}`}
+                onClick={() => setPickerStep('month')}
+              >
+                Month
+              </button>
+              <button
+                type="button"
+                className={`date-step ${pickerStep === 'day' ? 'is-active' : ''}`}
+                onClick={() => setPickerStep('day')}
+              >
+                Day
+              </button>
+            </div>
+            {pickerStep === 'year' ? (
+              <div className="date-picker-sheet__years">
+                {yearOptions.map((year) => (
+                  <button
+                    key={year}
+                    type="button"
+                    className={`date-list-item ${selectedYear === year ? 'is-selected' : ''}`}
+                    onClick={() => {
+                      setPickerParts((current) => ({ ...current, year: String(year) }));
+                      setPickerStep('month');
+                    }}
+                  >
+                    {year}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+            {pickerStep === 'month' ? (
+              <div className="date-picker-sheet__grid">
+                {MONTH_OPTIONS.map((month) => (
+                  <button
+                    key={month.value}
+                    type="button"
+                    className={`date-list-item ${pickerParts.month === month.value ? 'is-selected' : ''}`}
+                    onClick={() => {
+                      setPickerParts((current) => ({ ...current, month: month.value }));
+                      setPickerStep('day');
+                    }}
+                  >
+                    {month.label}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+            {pickerStep === 'day' ? (
+              <div className="date-picker-sheet__days">
+                {Array.from(
+                  { length: daysInMonth(selectedYear, selectedMonth) },
+                  (_, index) => index + 1,
+                ).map((day) => (
+                  <button
+                    key={day}
+                    type="button"
+                    className={`date-day ${selectedDay === day ? 'is-selected' : ''}`}
+                    onClick={() =>
+                      setPickerParts((current) => ({
+                        ...current,
+                        day: String(day).padStart(2, '0'),
+                      }))
+                    }
+                  >
+                    {day}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+            <div className="date-picker-sheet__actions">
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() =>
+                  setPickerStep((current) =>
+                    current === 'day' ? 'month' : current === 'month' ? 'year' : 'year',
+                  )
+                }
+                disabled={pickerStep === 'year'}
+              >
+                Back
+              </button>
+              <div className="date-picker-sheet__actions-group">
+                <button type="button" className="secondary-button" onClick={() => setPickerOpen(false)}>
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="primary-button"
+                  onClick={() => {
+                    commitDate({
+                      year: String(selectedYear),
+                      month: String(selectedMonth).padStart(2, '0'),
+                      day: String(selectedDay).padStart(2, '0'),
+                    });
+                    setPickerOpen(false);
+                  }}
+                >
+                  Select date
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function MemoryEditorModal({
   draft,
   birthDate,
@@ -551,6 +904,11 @@ function MemoryEditorModal({
       }));
     }
   }, [categories, form.categoryId]);
+
+  const birthYear = birthDate ? toDate(birthDate)?.getFullYear() ?? new Date().getFullYear() : new Date().getFullYear() - 120;
+  const selectedYear = toDate(form.date)?.getFullYear() ?? birthYear;
+  const maxMomentYear = Math.max(new Date().getFullYear(), selectedYear);
+  const minMomentYear = Math.min(birthYear, selectedYear);
 
   async function handlePhotoChange(event) {
     const file = event.target.files?.[0];
@@ -579,6 +937,17 @@ function MemoryEditorModal({
 
   function handleSubmit(event) {
     event.preventDefault();
+
+    if (!form.date || !toDate(form.date)) {
+      setError('Please enter a valid date or choose one from the calendar.');
+      return;
+    }
+
+    if (birthDate && toDate(form.date) < toDate(birthDate)) {
+      setError('A moment cannot be earlier than your birth date.');
+      return;
+    }
+
     onSave(form);
   }
 
@@ -601,17 +970,12 @@ function MemoryEditorModal({
             required
           />
         </label>
-        <label className="field">
-          <span>Date</span>
-          <input
-            type="date"
-            value={form.date}
-            onChange={(event) =>
-              setForm((current) => ({ ...current, date: event.target.value }))
-            }
-            required
-          />
-        </label>
+        <MomentDateField
+          value={form.date}
+          minYear={minMomentYear}
+          maxYear={maxMomentYear}
+          onChange={(nextDate) => setForm((current) => ({ ...current, date: nextDate }))}
+        />
         <div className="field">
           <div className="field__split">
             <span>Category</span>
@@ -710,7 +1074,6 @@ function RangeEditorModal({ draft, birthDate, onClose, onSave }) {
               setForm((current) => ({
                 ...current,
                 laneId: event.target.value,
-                color: getLaneColor(event.target.value),
               }))
             }
           >
@@ -757,16 +1120,6 @@ function RangeEditorModal({ draft, birthDate, onClose, onSave }) {
             />
           </label>
         </div>
-        <label className="field">
-          <span>Color</span>
-          <input
-            type="color"
-            value={form.color}
-            onChange={(event) =>
-              setForm((current) => ({ ...current, color: event.target.value }))
-            }
-          />
-        </label>
         <label className="field">
           <span>Details</span>
           <textarea
@@ -1325,12 +1678,32 @@ export default function App() {
 
   function handleRangeSave(range) {
     setData((current) => {
-      const nextRanges = {
-        ...current.ranges,
-        [range.laneId]: current.ranges[range.laneId].some((entry) => entry.id === range.id)
-          ? current.ranges[range.laneId].map((entry) => (entry.id === range.id ? range : entry))
-          : [...current.ranges[range.laneId], range],
+      const cleanedRange = {
+        id: range.id,
+        laneId: range.laneId,
+        label: range.label,
+        startDate: range.startDate,
+        endDate: range.endDate,
+        details: range.details,
       };
+      const nextRanges = Object.fromEntries(
+        TIMELINE_LANES.map((lane) => {
+          const withoutCurrent = current.ranges[lane.id].filter((entry) => entry.id !== range.id);
+
+          if (lane.id !== range.laneId) {
+            return [lane.id, withoutCurrent];
+          }
+
+          const hasExisting = current.ranges[lane.id].some((entry) => entry.id === range.id);
+
+          return [
+            lane.id,
+            hasExisting
+              ? withoutCurrent.concat(cleanedRange)
+              : [...withoutCurrent, cleanedRange],
+          ];
+        }),
+      );
 
       return normalizeData({
         ...current,
@@ -1749,7 +2122,7 @@ export default function App() {
                               style={{
                                 left: `${TIMELINE_OFFSET + positionForDate(range.startDate)}px`,
                                 width: `${widthForRange(range.startDate, range.endDate)}px`,
-                                background: range.color,
+                                background: `color-mix(in srgb, ${range.color} 22%, white)`,
                               }}
                               onClick={() =>
                                 setSelectedItem({
